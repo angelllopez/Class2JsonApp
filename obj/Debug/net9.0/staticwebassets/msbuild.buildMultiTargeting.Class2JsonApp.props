@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\Class2JsonApp.props" />
-</Project>
