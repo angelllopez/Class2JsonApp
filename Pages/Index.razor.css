@@ -1,0 +1,15 @@
+.flex-container {
+    display: flex;
+    gap: 10px; /* Space between the text areas */
+}
+
+#text-input, #text-output {
+    padding: 10px; /* Adds margin inside the text areas */
+    margin-bottom: 5px; /* Space below the text areas */
+    box-sizing: border-box; /* Ensures padding doesn't affect the overall size */
+}
+
+#error-message {
+    color: red; /* Red color for error messages */
+    font-weight: bold; /* Bold text for emphasis */
+}

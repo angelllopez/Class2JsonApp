@@ -1,0 +1,111 @@
+@page "/"
+
+<h3>Welcome to ClassToJsonApp!</h3>
+
+<div class="flex-container">
+    <textarea 
+        id="text-input" 
+        @bind="ClassText" 
+        rows="20" 
+        cols="60" 
+        placeholder="Paste your C# class..." 
+        spellcheck="false" 
+        autocomplete="false">
+    </textarea>
+    
+    <textarea 
+        id="text-output" 
+        rows="20" 
+        cols="60" 
+        placeholder="JSON output will appear here..." 
+        readonly>
+        @JsonOutput
+    </textarea>
+</div>
+
+<button @onclick="ConvertToJson">
+    Convert <span style="font-size: 1.0em;">➔</span> JSON
+</button>
+
+<button @onclick="ClearFields">
+    Clear <span style="font-size: 1.0em;">🗑️</span>
+</button>
+
+@code {
+    private string ClassText = "";
+    private string JsonOutput = "";
+
+    private void ConvertToJson()
+    {
+        // Check if the input is empty or null
+        if (string.IsNullOrWhiteSpace(ClassText))
+        {
+            JsonOutput = "Please enter a valid C# class.";
+            return;
+        }
+
+        try
+        {
+            // Parse the C# class and generate JSON
+            JsonOutput = GenerateJsonFromClass(ClassText);
+        }
+        catch (Exception ex)
+        {
+            JsonOutput = $"Error: {ex.Message}";
+        }
+    }
+
+    private string GenerateJsonFromClass(string classText)
+    {
+        // Use Roslyn to parse the class
+        var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(classText);
+        var root = tree.GetRoot();
+
+        // Find the class declaration
+        var classNode = root.DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>()
+            .FirstOrDefault();
+
+        if (classNode == null)
+        {
+            throw new Exception("No valid class found in the input.");
+        }
+
+        // Extract properties and generate JSON
+        var properties = classNode.Members
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.PropertyDeclarationSyntax>()
+            .Select(prop => new
+            {
+                Name = prop.Identifier.Text,
+                Type = prop.Type.ToString(),
+                DefaultValue = GetDefaultValue(prop.Type.ToString())
+            });
+
+        // Create a JSON object
+        var jsonObject = properties.ToDictionary(
+            prop => prop.Name,
+            prop => prop.DefaultValue
+        );
+
+        return System.Text.Json.JsonSerializer.Serialize(jsonObject, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private object GetDefaultValue(string type)
+    {
+        // Return default values based on the type
+        return type switch
+        {
+            "string" => "",
+            "int" => 0,
+            "double" => 0.0,
+            "bool" => false,
+            _ => "" // Default to an empty string for unsupported types
+        };
+    }
+
+    private void ClearFields()
+    {
+        ClassText = string.Empty;
+        JsonOutput = string.Empty;
+    }
+}
